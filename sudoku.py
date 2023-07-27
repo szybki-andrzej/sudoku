@@ -2,6 +2,71 @@ import numpy as np
 import random
 
 
+class Board:
+    def __init__(self):
+        self.rows = [Row(i) for i in range(9)]
+        self.cols = [Col(i) for i in range(9)]
+        self.squares = [Square(i) for i in range(9)]
+        self.cells = []
+        self.cells_creation()
+        self.none_cells = []
+        self.none_cells_creation()
+
+    def cells_creation(self):
+        for row in self.rows:
+            for col in self.cols:
+                sq = self.squares[(3 * (row.num // 3)) + (col.num // 3)]
+                cell = Cell(row, col, sq)
+                self.cells.append(cell)
+                sq.add_cell(cell)
+                row.add_cell(cell)
+                col.add_cell(cell)
+
+    def __str__(self):
+        row_strings = []
+        for row in self.rows:
+            row_values = [cell.value for cell in row.cells]
+            row_strings.append(", ".join(str(value) for value in row_values))
+
+        return f"{25 * '*'}\n{chr(10).join(row_strings)}"
+
+    def diagonal_draw(self):
+        for i in [0, 4, 8]:
+            for cell in self.squares[i].cells:
+                cell.draw_val()
+        self.none_cells_creation()
+
+    def random_deletion(self, n):
+        rand = random.sample(range(81), n)
+        for i in rand:
+            self.cells[i].del_value()
+        self.none_cells_creation()
+
+    def none_cells_creation(self):
+        self.none_cells = [cell for cell in self.cells if cell.value is None]
+
+    def solver(self, n, loop):
+        if n == len(self.none_cells):
+            # if loop[0] == 0:
+            #     loop[0] += 1
+            #     return False
+            #
+            # else:
+            #     print('jest nas więcej')
+            return True
+
+        elif len(self.none_cells[n].choice()) == 0:
+            if self.none_cells[n].value is not None:
+                self.none_cells[n].del_value()
+            return False
+
+        else:
+            self.none_cells[n].add_value(self.none_cells[n].choice()[0])
+            while self.solver(n + 1, loop) is False:
+                if self.none_cells[n].add_value(self.none_cells[n].del_value()) is False:
+                    return False
+
+
 class Row:
     def __init__(self, num, num_options=None):
         if num_options is None:
@@ -85,52 +150,15 @@ class Cell:
             return self.choice()[index+1]
 
 
-rows = [Row(i) for i in range(0, 9)]
-cols = [Col(i) for i in range(0, 9)]
-squares = [Square(i) for i in range(0, 9)]
+if __name__ == "__main__":
+    board = Board()
+    board.diagonal_draw()
 
+    print(board)
 
-def square_indent(row, col):
-    return (3 * (row.num // 3)) + (col.num // 3)
-
-cells = []
-for i in rows:
-    for j in cols:
-        sq = squares[square_indent(i, j)]
-        cell = Cell(i, j, sq)
-        cells.append(cell)
-        sq.add_cell(cell)
-        i.add_cell(cell)
-        j.add_cell(cell)
-
-for i in [0, 4, 8]:
-    for cell in squares[i].cells:
-        cell.draw_val()
-
-for row in rows:
-    print([cell.value for cell in row.cells])
-
-none_cells = [cell for cell in cells if cell.value is None]
-# random.shuffle(none_cells)
-
-
-def solver(n):
-    if n == 54:
-        return True
-
-    elif len(none_cells[n].choice()) == 0:
-        if none_cells[n].value is not None:
-            none_cells[n].del_value()
-        return False
-
-    else:
-        none_cells[n].add_value(none_cells[n].choice()[0])
-        while solver(n+1) is False:
-            if none_cells[n].add_value(none_cells[n].del_value()) is False:
-                return False
-
-
-solver(0)
-
-for row in rows:
-    print([cell.value for cell in row.cells])
+    board.solver(0, [0])
+    print(board)
+    board.random_deletion(50)
+    print(board)
+    board.solver(0, [0])
+    print(board)
