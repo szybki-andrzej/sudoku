@@ -57,6 +57,7 @@ class Board:
             f.write(f"{chr(10).join(row_strings)}")
 
     def diagonal_draw(self):
+        """Function that draw values to the cells in diagonal squares of board. """
         for i in range(0, self.size, self.sq_size + 1):
             for cell in self.squares[i].cells:
                 cell.draw_val()
@@ -64,6 +65,7 @@ class Board:
         self.cells_values()
 
     def random_deletion(self, n):
+        """Function that randomly change n values to in the board to None."""
         rand = random.sample(range(self.size**2), n)
         for i in rand:
             self.cells[i].del_value()
@@ -71,9 +73,12 @@ class Board:
         self.cells_values()
 
     def none_cells_creation(self):
+        """Function that identifies cells with None values."""
         self.none_cells = [cell for cell in self.cells if cell.value is None]
 
     def solver(self, n, loop):
+        """Function that fills none_cells with values using backtracking algorithm using recurrence and leave values not
+         changed if there is more than one solution."""
         if n == len(self.none_cells):
             if loop[0] == 0:
                 loop[0] += 1
@@ -142,10 +147,12 @@ class Cell:
         self.value = value
 
     def choice(self):
+        """Function that returns list of possible choices of values for the cell."""
         return np.intersect1d(np.intersect1d(np.array(self.row.num_options), np.array(self.col.num_options)),
                               np.array(self.square.num_options))
 
     def draw_val(self):
+        """Function that draw values from the possible choices for the cell."""
         try:
             self.value = random.choice(self.choice())
         except IndexError:
@@ -163,6 +170,8 @@ class Cell:
         self.square.num_options.remove(self.value)
 
     def del_value(self):
+        """Function that changes value for the cell to None and return next element from choices of the cell if
+        exists."""
         self.row.num_options.append(self.value)
         self.row.num_options.sort()
         self.col.num_options.append(self.value)
