@@ -1,21 +1,28 @@
 import numpy as np
 import random
+import math
 
 
 class Board:
-    def __init__(self):
-        self.rows = [Row(i) for i in range(9)]
-        self.cols = [Col(i) for i in range(9)]
-        self.squares = [Square(i) for i in range(9)]
+    def __init__(self, size):
+        self.size = size
+        self.sq_size = int(math.sqrt(self.size))
+        self.rows = [Row(i, self.size) for i in range(self.size)]
+        self.cols = [Col(i, self.size) for i in range(self.size)]
+        self.squares = [Square(i, self.size) for i in range(self.size)]
         self.cells = []
         self.cells_creation()
         self.none_cells = []
         self.none_cells_creation()
+        self.cells_values_list = [None for _ in range(len(self.cells))]
+
+    def cells_values(self):
+        self.cells_values_list = [cell.value for cell in self.cells]
 
     def cells_creation(self):
         for row in self.rows:
             for col in self.cols:
-                sq = self.squares[(3 * (row.num // 3)) + (col.num // 3)]
+                sq = self.squares[(self.sq_size * (row.num // self.sq_size)) + (col.num // self.sq_size)]
                 cell = Cell(row, col, sq)
                 self.cells.append(cell)
                 sq.add_cell(cell)
@@ -25,34 +32,52 @@ class Board:
     def __str__(self):
         row_strings = []
         for row in self.rows:
-            row_values = [cell.value for cell in row.cells]
+            row_values = []
+            for cell in row.cells:
+                if cell.value is None:
+                    row_values.append('X')
+                else:
+                    row_values.append(cell.value)
             row_strings.append(", ".join(str(value) for value in row_values))
 
-        return f"{25 * '*'}\n{chr(10).join(row_strings)}"
+        return f"{chr(10).join(row_strings)}"
+
+    def save_to_file(self):
+        row_strings = []
+        for row in self.rows:
+            row_values = []
+            for cell in row.cells:
+                if cell.value is None:
+                    row_values.append('X')
+                else:
+                    row_values.append(cell.value)
+            row_strings.append(", ".join(str(value) for value in row_values))
+
+        with open("result_board.txt", 'w') as f:
+            f.write(f"{chr(10).join(row_strings)}")
 
     def diagonal_draw(self):
-        for i in [0, 4, 8]:
+        for i in range(0, self.size, self.sq_size + 1):
             for cell in self.squares[i].cells:
                 cell.draw_val()
         self.none_cells_creation()
+        self.cells_values()
 
     def random_deletion(self, n):
-        rand = random.sample(range(81), n)
+        rand = random.sample(range(self.size**2), n)
         for i in rand:
             self.cells[i].del_value()
         self.none_cells_creation()
+        self.cells_values()
 
     def none_cells_creation(self):
         self.none_cells = [cell for cell in self.cells if cell.value is None]
 
     def solver(self, n, loop):
         if n == len(self.none_cells):
-            # if loop[0] == 0:
-            #     loop[0] += 1
-            #     return False
-            #
-            # else:
-            #     print('jest nas więcej')
+            if loop[0] == 0:
+                loop[0] += 1
+                return False
             return True
 
         elif len(self.none_cells[n].choice()) == 0:
@@ -68,9 +93,10 @@ class Board:
 
 
 class Row:
-    def __init__(self, num, num_options=None):
+    def __init__(self, num, size, num_options=None):
+        self.size = size
         if num_options is None:
-            num_options = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+            num_options = list(range(self.size))
         self.num = num
         self.num_options = num_options
         self.cells = []
@@ -80,9 +106,10 @@ class Row:
 
 
 class Col:
-    def __init__(self, num, num_options=None):
+    def __init__(self, num, size, num_options=None):
+        self.size = size
         if num_options is None:
-            num_options = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+            num_options = list(range(self.size))
         self.num = num
         self.num_options = num_options
         self.cells = []
@@ -92,9 +119,10 @@ class Col:
 
 
 class Square:
-    def __init__(self, num, num_options=None):
+    def __init__(self, num, size, num_options=None):
+        self.size = size
         if num_options is None:
-            num_options = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+            num_options = list(range(self.size))
         self.num = num
         self.num_options = num_options
         self.cells = []
@@ -151,14 +179,14 @@ class Cell:
 
 
 if __name__ == "__main__":
-    board = Board()
+    board = Board(9)
     board.diagonal_draw()
-
-    print(board)
-
     board.solver(0, [0])
+    for i in range(10000):
+        board.random_deletion(10)
+        board.solver(0, [0])
+        board.cells_values()
+        if None in board.cells_values_list:
+            break
     print(board)
-    board.random_deletion(50)
-    print(board)
-    board.solver(0, [0])
-    print(board)
+    board.save_to_file()
